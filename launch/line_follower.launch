@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="waffle_pi"/>
+  <arg name="x_pos" default="0.0"/>
+  <arg name="y_pos" default="1.4"/>
+  <arg name="z_pos" default="0.01"/>
+  <arg name="yaw" default="-1.5708"/>
+
+  <!-- Set TurtleBot3 Model -->
+  <env name="TURTLEBOT3_MODEL" value="$(arg model)"/>
+
+  <!-- Launch Gazebo with pentagon world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find turtlebot3_line_follower)/worlds/pentagon_line.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <!-- Robot Description - Use standard TurtleBot3 Waffle Pi -->
+  <param name="robot_description" 
+         command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_waffle_pi.urdf.xacro"/>
+
+  <!-- Spawn TurtleBot3 -->
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"
+        args="-urdf -model turtlebot3_$(arg model) -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -Y $(arg yaw) -param robot_description"/>
+
+  <!-- Robot State Publisher -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0"/>
+  </node>
+
+  <!-- Line Follower Node -->
+  <node pkg="turtlebot3_line_follower" type="line_follower.py" name="line_follower" output="screen"/>
+
+  <!-- Pentagon Reference Path Publisher for RViz -->
+  <node pkg="turtlebot3_line_follower" type="publish_pentagon_path.py" name="pentagon_path_publisher" output="screen"/>
+
+  <!-- RViz Visualization -->
+  <node pkg="rviz" type="rviz" name="rviz" 
+        args="-d $(find turtlebot3_line_follower)/rviz/line_follower.rviz" required="false"/>
+
+</launch>
